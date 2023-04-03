@@ -8,8 +8,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"trivia-backend/stringgen"
-	"trivia-backend/websocket"
+	"voinc-backend/stringgen"
+	"voinc-backend/terraform"
+	"voinc-backend/websocket"
 )
 
 type secretsJSON struct {
@@ -77,6 +78,8 @@ func main() {
 	secretsFile, _ := ioutil.ReadFile("./secrets.json")
 
 	secrets := secretsJSON{}
+
+	terraform.Initialize()
 
 	_ = json.Unmarshal(secretsFile, &secrets)
 	clientID = secrets.ClientID

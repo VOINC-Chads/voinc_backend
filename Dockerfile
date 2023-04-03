@@ -8,8 +8,8 @@ RUN go mod download
 
 COPY . ./
 
-RUN go build -o /trivia-backend
+RUN go build -o /voinc-backend
 
 EXPOSE 8080
 
-CMD [ "/trivia-backend" ]
+CMD [ "/voinc-backend" ]
