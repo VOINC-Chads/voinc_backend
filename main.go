@@ -21,10 +21,10 @@ type secretsJSON struct {
 var (
 	clientID = ""
 	secretID = ""
-	lobbies  = make(map[string]*websocket.Lobby)
+	lobbies  = make(map[string]*websocket.Session)
 )
 
-func serveWs(lobby *websocket.Lobby, w http.ResponseWriter, r *http.Request, name string) {
+func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request, name string) {
 	fmt.Println("Endpoint Hit: WebSocket")
 	conn, err := websocket.Upgrade(w, r)
 	if err != nil {
@@ -43,10 +43,10 @@ func serveWs(lobby *websocket.Lobby, w http.ResponseWriter, r *http.Request, nam
 		ID:         stringgen.String(10),
 		PublicInfo: clientPublicInfo,
 		Conn:       conn,
-		Lobby:      lobby,
+		Session:      session,
 	}
 
-	lobby.Register <- client
+	session.Register <- client
 	client.Read()
 }
 
@@ -64,7 +64,7 @@ func setupRoutes() {
 		// enable CORS to allow browser to make call to API
 		enableCors(&w)
 
-		lobby := websocket.NewLobby(clientID, secretID)
+		lobby := websocket.NewSession(clientID, secretID)
 
 		go lobby.Start()
 

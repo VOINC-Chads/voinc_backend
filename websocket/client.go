@@ -12,12 +12,12 @@ import (
 // Client
 // - ID:	Client ID,
 // - Conn: Reference to websocket connection
-// - Lobby: Reference to lobby
+// - Session: Reference to session
 type Client struct {
 	ID         string
 	PublicInfo *ClientPublicInfo
 	Conn       *websocket.Conn
-	Lobby      *Lobby
+	Session      *Session
 	mu         sync.Mutex
 }
 
@@ -41,8 +41,8 @@ type Message struct {
 //  - Type: 		String containing type of data (eg. textMsg)
 //  - Content:	Content struct
 type MessageContent struct {
-	Type    int    `json:"type"`
-	Content string `json:"content"`
+	MapCode 	string `json:"mapCode"`
+	ReduceCode 	string `json:"reduceCode"`
 }
 
 type ReadyMessage struct {
@@ -64,9 +64,9 @@ type Answer struct {
 }
 
 // Response
-// - Lobby:	Tells the client where it has been moved (likely lobby or game)
+// - Session:	Tells the client where it has been moved (likely Session or game)
 type Response struct {
-	Lobby string `json:"lobby,omitempty"`
+	Session string `json:"session,omitempty"`
 }
 
 // Content
@@ -112,7 +112,7 @@ func (c *Client) Send(v interface{}) error {
 // Read function
 func (c *Client) Read() {
 	defer func() {
-		c.Lobby.Unregister <- c
+		c.Session.Unregister <- c
 
 		err := c.Conn.Close()
 		if err != nil {
@@ -126,6 +126,7 @@ func (c *Client) Read() {
 			log.Println(err)
 			return
 		}
+		fmt.Println("Message Received")
 		message := Message{Type: messageType, Body: string(p)}
 		fmt.Println(message)
 
@@ -137,33 +138,11 @@ func (c *Client) Read() {
 			return
 		}
 
-		switch messageContent.Type {
-		case 0:
-			readyMessage := &ReadyMessage{}
-
-			err = json.Unmarshal([]byte(messageContent.Content), &readyMessage)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			c.PublicInfo.Ready = readyMessage.Status
-
-		case 1:
-			// This is where an answer would be thrown in
-			answer := &Answer{}
-
-			err = json.Unmarshal([]byte(messageContent.Content), &answer)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			c.PublicInfo.Answer = answer.Answer
-		case 2:
-			// This is where people deregister or whatever
-			c.Lobby.Unregister <- c
-		}
-		fmt.Println("Type:", messageContent.Type)
-		fmt.Println("Content:", messageContent.Content)
+		fmt.Println("MapCode:", messageContent.MapCode)
+		fmt.Println("ReduceCode:", messageContent.ReduceCode)
+		c.Send(Message{
+			Type: 1,
+			Body: "Received the message :)",
+		})
 	}
 }
