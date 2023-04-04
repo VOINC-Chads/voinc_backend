@@ -32,6 +32,7 @@ jobs:
           cd /home/ubuntu/repo
           echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
           source ~/.bashrc
+          PATH="/usr/local/go/bin/:$PATH"
           go build .
 
     env:
