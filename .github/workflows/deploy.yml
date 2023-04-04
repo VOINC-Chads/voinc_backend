@@ -32,8 +32,9 @@ jobs:
           cd /home/ubuntu/repo
           echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
           source ~/.bashrc
-          PATH="/usr/local/go/bin/:$PATH"
+          export PATH=$PATH:/usr/local/go/bin
           go build .
+          ./voinc-backend
 
     env:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
