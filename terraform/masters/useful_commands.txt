@@ -2,6 +2,7 @@
 # terraform apply -var 'images=[{"instance_id": "value1", "image": "value2"}, {"instance_id": "value3", "image": "value4"}]'
 
 # PUSH TO ECR
+# Expects you to be in directory Dockerfile is in
 # sudo aws ecr get-login-password --region us-east-2 | sudo docker login --username AWS --password-stdin 997625559881.dkr.ecr.us-east-2.amazonaws.com
 # sudo docker build -t voinc_repo .
 # sudo docker tag voinc_repo:<INSTANCE_UUID> 997625559881.dkr.ecr.us-east-2.amazonaws.com/voinc_repo:<INSTANCE_UUID>
