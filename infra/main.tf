@@ -12,18 +12,18 @@ resource "aws_vpc" "vpcs" {
 }
 
 resource "aws_internet_gateway" "igws" {
-  count = length(aws_vpc.vpc)
+  count = length(aws_vpc.vpcs)
 
-  vpc_id = aws_vpc.vpc[count.index].id
+  vpc_id = aws_vpc.vpcs[count.index].id
   tags = {
-    Name = "${aws_vpc.vpc[count.index].tags.Name}-igw"
+    Name = "${aws_vpc.vpcs[count.index].tags.Name}-igw"
   }
 }
 
 resource "aws_route_table" "route-tables" {
-  count = length(aws_vpc.vpc)
+  count = length(aws_vpc.vpcs)
 
-  vpc_id = aws_vpc.vpc[count.index].id
+  vpc_id = aws_vpc.vpcs[count.index].id
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -36,23 +36,23 @@ resource "aws_route_table" "route-tables" {
   }
 
   tags = {
-    Name = "${aws_vpc.vpc[count.index].tags.Name}-route-table"
+    Name = "${aws_vpc.vpcs[count.index].tags.Name}-route-table"
   }
 }
 
 resource "aws_subnet" "subnets" {
-  count = length(aws_vpc.vpc)
+  count = length(aws_vpc.vpcs)
 
-  vpc_id = aws_vpc.vpc[count.index].id
+  vpc_id = aws_vpc.vpcs[count.index].id
   cidr_block = "10.${count.index}.1.0/24"
-  availability_zone = "us-east-2"
+  availability_zone = "us-east-2c"
   tags = {
-    Name = "${aws_vpc.vpc[count.index].tags.Name}-subnet"
+    Name = "${aws_vpc.vpcs[count.index].tags.Name}-subnet"
   }
 }
 
 resource "aws_route_table_association" "instance-route-table-assoc" {
-  count = length(aws_vpc.vpc)
+  count = length(aws_vpc.vpcs)
   subnet_id      = aws_subnet.subnets[count.index].id
   route_table_id = aws_route_table.route-tables[count.index].id
 }
@@ -61,7 +61,7 @@ resource "aws_security_group" "sgs" {
   count = length(local.infra)
   name        = "allow_web_traffic"
   description = "Allow Web inbound traffic"
-  vpc_id      = aws_vpc.vpc[count.index].id
+  vpc_id      = aws_vpc.vpcs[count.index].id
 
   ingress {
     description = "HTTP"
@@ -95,47 +95,62 @@ resource "aws_security_group" "sgs" {
   }
 
   tags = {
-    Name = "${aws_vpc.vpc[count.index].tags.Name}-allow_web"
+    Name = "${aws_vpc.vpcs[count.index].tags.Name}-allow_web"
   }
 }
 
-module "masters" {
-  for_each = { for idx, info in jsondecode(file("infra.json")) : idx => item }
-  source   = "masters"
+# module "masters" {
+#   for_each = { for idx, info in jsondecode(file("infra.json")) : idx => item }
+#   source   = "./masters"
 
-  name              = "${each.value.uuid}-master"
-  subnet_id         = aws_subnet.subnets[each.key].id
-  security_group_id = aws_security_group.sgs[each,key].id
-  gateway           = aws_internet_gateway.igws[each.key]
-  image             = "master" # Need to make it so we use worker images too
-}
+#   name              = "${each.value.uuid}-master"
+#   subnet_id         = aws_subnet.subnets[each.key].id
+#   security_group_id = aws_security_group.sgs[each.key].id
+#   gateway           = aws_internet_gateway.igws[each.key]
+#   image             = "master" # Need to make it so we use worker images too
+# }
 
-data "aws_instances" "ec2_instances" {
-  instance_ids = aws_instance.ec2_instances.*.id
-}
+# data "aws_instances" "ec2_instances" {
+#   instance_ids = aws_instance.ec2_instances.*.id
+# }
 
-data "aws_instance_public_ips" "ec2_instances" {
-  for_each = { for idx, instance in data.aws_instances.ec2_instances : instance.id => instance }
-  ip_address = each.value.public_ip
-}
+# data "aws_instance_public_ips" "ec2_instances" {
+#   for_each = { for idx, instance in data.aws_instances.ec2_instances : instance.id => instance }
+#   ip_address = each.value.public_ip
+# }
 
-data "uuid_ip_map" {
-  value = { for id, ip in data.aws_instance_public_ips.ec2_instances : id => ip.ip_address }
-}
+# locals{
+#   ip_map = { for id, ip in data.aws_instance_public_ips.ec2_instances : id => ip.ip_address }
+# }
 
-module "workers" {
-  for_each = { for idx, info in jsondecode(file("infra.json")) : idx => item }
-  count = each.value.n
-  source   = "./workers"
+# module "workers" {
+#   for_each = { for idx, info in jsondecode(file("infra.json")) : idx => item }
+#   source   = "./workers"
 
-  name              = "${each.value.uuid}-worker-${count.index}"
+#   workers = [
+#     for i in range(each.value.n) :
+#       {
+#         name              = "${each.value.uuid}-worker-${i}"
+#         subnet_id         = aws_subnet.subnets[each.key].id
+#         security_group_id = aws_security_group.sgs[each.key].id
+#         gateway           = aws_internet_gateway.igws[each.key]
+#         image             = "worker" # Need to create this still
+#         master_ip         = locals.ip_map.value[each.value.uuid]
+#       }
+#   ]
+# }
+
+module "tasks"{
+  for_each = { for idx, item in jsondecode(file("infra.json")) : idx => item }
+  source   = "./tasks"
+
+  uuid              = each.value.uuid
+  n                 = each.value.n
   subnet_id         = aws_subnet.subnets[each.key].id
   security_group_id = aws_security_group.sgs[each.key].id
-  gateway           = aws_internet_gateway.igws[each.key]
-  image             = "worker" # Need to create this still
-  master_ip         = data.uuid_ip_map.value[each.value.uuid]
+  gateway_id        = aws_internet_gateway.igws[each.key]
 }
 
 output "public-ip" {
-  value = module.masters.*
+  value = module.tasks.*
 }

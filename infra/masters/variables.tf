@@ -10,7 +10,7 @@ variable "security_group_id" {
 
 }
 
-variable "gateway" {
+variable "gateway_id" {
 
 }
 

@@ -1,6 +1,6 @@
 resource "aws_instance" "ec2_worker" {
 
-  ami           = data.aws_ami.amazon_linux.id
+  ami           = "ami-0103f211a154d64a6"
   instance_type = "t2.micro"
 
   subnet_id                   = var.subnet_id
@@ -9,7 +9,7 @@ resource "aws_instance" "ec2_worker" {
   # Full access to ECR
   iam_instance_profile = "ec2-profile"
 
-  associate_public_ip_address = true
+  associate_public_ip_address = false
   
   user_data = <<EOF
          #!/bin/bash

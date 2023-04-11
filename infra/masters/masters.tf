@@ -1,6 +1,6 @@
 resource "aws_instance" "ec2_master" {
 
-  ami           = data.aws_ami.amazon_linux.id
+  ami           = "ami-0103f211a154d64a6"
   instance_type = "t2.micro"
 
   subnet_id                   = var.subnet_id

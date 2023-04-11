@@ -1,4 +1,7 @@
-variable "name" {
+variable "uuid"{
+}
+
+variable "n" {
 
 }
 
@@ -12,12 +15,4 @@ variable "security_group_id" {
 
 variable "gateway_id" {
 
-}
-
-variable "image" {
-    
-}
-
-variable "master_ip" {
-    
 }
