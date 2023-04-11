@@ -1,10 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"voinc-backend/terraform"
 
 	"github.com/gorilla/mux"
 
@@ -12,15 +11,8 @@ import (
 	"voinc-backend/websocket"
 )
 
-type secretsJSON struct {
-	ClientID string `json:clientID`
-	SecretID string `json:secretID`
-}
-
 var (
-	clientID = ""
-	secretID = ""
-	lobbies  = make(map[string]*websocket.Session)
+	lobbies  			= make(map[string]*websocket.Session)
 )
 
 func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request, name string) {
@@ -63,7 +55,7 @@ func setupRoutes() {
 		// enable CORS to allow browser to make call to API
 		enableCors(&w)
 
-		lobby := websocket.NewSession(clientID, secretID)
+		lobby := websocket.NewSession("clientID", "secretID")
 
 		go lobby.Start()
 
@@ -74,15 +66,10 @@ func setupRoutes() {
 }
 
 func main() {
-	secretsFile, _ := ioutil.ReadFile("./secrets.json")
-
-	secrets := secretsJSON{}
+	// secretsFile, _ := ioutil.ReadFile("./secrets.json")
 
 	// terraform.Initialize()
-
-	_ = json.Unmarshal(secretsFile, &secrets)
-	clientID = secrets.ClientID
-	secretID = secrets.SecretID
+	terraform.GetInstance()
 
 	setupRoutes()
 

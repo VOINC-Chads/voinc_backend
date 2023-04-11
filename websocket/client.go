@@ -17,7 +17,7 @@ type Client struct {
 	ID         string
 	PublicInfo *ClientPublicInfo
 	Conn       *websocket.Conn
-	Session      *Session
+	Session    *Session
 	mu         sync.Mutex
 }
 
@@ -37,12 +37,23 @@ type Message struct {
 	Body string `json:"body"`
 }
 
+type CodeMessage struct {
+	ProcessCode 	string 	`json:"processCode"`
+	ExecuteCode 	string 	`json:"executeCode"`
+	Requirements	string	`json:"requirements"`
+}
+
+type JobMessage struct {
+	Jobs	[]string	`json:"jobs"`
+}
+
 // MessageContent
 //  - Type: 		String containing type of data (eg. textMsg)
 //  - Content:	Content struct
 type MessageContent struct {
-	MapCode 	string `json:"mapCode"`
-	ReduceCode 	string `json:"reduceCode"`
+	Type int 			`json:"type"`
+	Code CodeMessage 	`json:"code,omitempty"`
+	Job	 JobMessage		`json:"job,omitempty"`
 }
 
 type ReadyMessage struct {
@@ -50,18 +61,13 @@ type ReadyMessage struct {
 }
 
 // MessageToClient
-//- Type: 		The type of response
-//- Response: Content of the response (not always there)
+//- Status: 		The type of response
+//- Content: Content of the response (not always there)
 type MessageToClient struct {
-	Type     string    `json:"type"`
-	Response *Response `json:"response"`
+	Status    	string  `json:"status"`
+	Content 	string 	`json:"content"`
 }
 
-// Response
-// - Session:	Tells the client where it has been moved (likely Session or game)
-type Response struct {
-	Session string `json:"session,omitempty"`
-}
 
 // Content
 // - TextMsg: If is of textMsg type,
@@ -129,14 +135,38 @@ func (c *Client) Read() {
 		err = json.Unmarshal(p, &messageContent)
 		if err != nil {
 			log.Println(err)
+			c.Send(MessageToClient{
+				Status: "ERROR",
+				Content: "Could not process json you sent",
+			})
 			return
 		}
 
-		fmt.Println("MapCode:", messageContent.MapCode)
-		fmt.Println("ReduceCode:", messageContent.ReduceCode)
-		c.Send(Message{
-			Type: 1,
-			Body: "Received the message :)",
-		})
+		switch messageContent.Type {
+		case 0:
+			code := messageContent.Code
+			fmt.Println("ExecuteCode:", code.ProcessCode)
+			fmt.Println("ProcessCode:", code.ExecuteCode)
+			fmt.Println("Requirements", code.Requirements)
+			c.Send(MessageToClient{
+				Status: "bruh",
+				Content: "Received the message :)",
+			})
+		case 1:
+			jobs := messageContent.Job
+			fmt.Println(jobs.Jobs)
+			c.Send(MessageToClient{
+				Status: "bruh",
+				Content: "Received the jobs :)",
+			})
+		default:
+			fmt.Println("Unrecognized type:", messageContent.Type)
+			c.Send(MessageToClient{
+				Status: "ERROR",
+				Content: "I did not recognize the message content type you provided",
+			})
+		}
+
+
 	}
 }
