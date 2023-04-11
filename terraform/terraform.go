@@ -72,7 +72,7 @@ func (t *terraform) Initialize() {
 		log.Fatalf("error running Show: %s", err)
 	}
 
-	fmt.Println(state.FormatVersion) // "0.1"
+	fmt.Println("Terraform version:", state.FormatVersion) // "0.1"
 }
 
 func (t *terraform) Apply() {

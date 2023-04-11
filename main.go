@@ -69,7 +69,10 @@ func main() {
 	// secretsFile, _ := ioutil.ReadFile("./secrets.json")
 
 	// terraform.Initialize()
-	terraform.GetInstance()
+	terraformInstance := terraform.GetInstance()
+
+	terraformInstance.Apply()
+
 
 	setupRoutes()
 
