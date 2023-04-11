@@ -101,7 +101,7 @@ resource "aws_security_group" "sgs" {
 
 module "masters" {
   for_each = { for idx, info in jsondecode(file("infra.json")) : idx => item }
-  source   = "./masters"
+  source   = "masters"
 
   name              = "${each.value.uuid}-master"
   subnet_id         = aws_subnet.subnets[each.key].id

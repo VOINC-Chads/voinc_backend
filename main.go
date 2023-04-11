@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"voinc-backend/stringgen"
-	"voinc-backend/terraform"
 	"voinc-backend/websocket"
 )
 
@@ -79,7 +78,7 @@ func main() {
 
 	secrets := secretsJSON{}
 
-	terraform.Initialize()
+	// terraform.Initialize()
 
 	_ = json.Unmarshal(secretsFile, &secrets)
 	clientID = secrets.ClientID

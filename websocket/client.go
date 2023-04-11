@@ -57,12 +57,6 @@ type MessageToClient struct {
 	Response *Response `json:"response"`
 }
 
-// Answer
-// - Answer:	Whatever answer the client responded
-type Answer struct {
-	Answer float32 `json:"answer,omitempty,string"`
-}
-
 // Response
 // - Session:	Tells the client where it has been moved (likely Session or game)
 type Response struct {
