@@ -10,11 +10,15 @@ import (
 //  - Clients: A map of clients connected to the Lobby
 //  - Broadcast: Channel for messaging all clients in Lobby
 type Session struct {
-	Register   chan *Client
-	Unregister chan *Client
-	Host       *Client
-	ClientID   string
-	SecretID   string
+	Register   		chan *Client
+	Unregister 		chan *Client
+	Host       		*Client
+	ClientID   		string
+	SecretID   		string
+	ProcessCode		string
+	ExecuteCode		string
+	Requirements	string
+	Jobs			[]string
 }
 
 
