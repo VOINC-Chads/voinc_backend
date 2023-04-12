@@ -3,10 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"net/http"
-	"voinc-backend/terraform"
-
 	"voinc-backend/stringgen"
 	"voinc-backend/websocket"
 )
@@ -22,6 +21,9 @@ func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request,
 		fmt.Fprintf(w, "%+v\n", err)
 		return
 	}
+	infraSession := websocket.NewInfraSession(*session)
+	b, _ := json.Marshal(infraSession)
+	fmt.Println(string(b))
 
 	clientPublicInfo := &websocket.ClientPublicInfo{
 		Name:   name,
@@ -55,7 +57,7 @@ func setupRoutes() {
 		// enable CORS to allow browser to make call to API
 		enableCors(&w)
 
-		lobby := websocket.NewSession("clientID", "secretID")
+		lobby := websocket.NewSession("clientID", "secretID", uuid.New().String(), 0)
 
 		go lobby.Start()
 
@@ -68,23 +70,9 @@ func setupRoutes() {
 func main() {
 	// secretsFile, _ := ioutil.ReadFile("./secrets.json")
 
-	// terraform.Initialize()
-	terraformInstance := terraform.GetInstance()
-
-	output := terraformInstance.Apply()
-	var ipMaps interface{}
-	err := json.Unmarshal([]byte(output["public-ip"].Value), &ipMaps)
-	if err != nil {
-		panic(err)
-	}
-
-	// Navigate the interface using type assertions.
-	for uuid, ip := range ipMaps.(map[string]interface{}) {
-		ip = ip.(map[string]interface{})["public_ip"]
-		fmt.Printf("UUID: %s, IP: %s\n", uuid, ip)
-		// PING IP HERE TO SEND JOB
-
-	}
+	//terraformInstance := terraform.GetInstance()
+	//
+	//terraformInstance.Apply()
 
 	setupRoutes()
 

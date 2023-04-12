@@ -38,22 +38,22 @@ type Message struct {
 }
 
 type CodeMessage struct {
-	ProcessCode 	string 	`json:"processCode"`
-	ExecuteCode 	string 	`json:"executeCode"`
-	Requirements	string	`json:"requirements"`
+	ProcessCode  string `json:"processCode"`
+	ExecuteCode  string `json:"executeCode"`
+	Requirements string `json:"requirements"`
 }
 
 type JobMessage struct {
-	Jobs	[]string	`json:"jobs"`
+	Jobs []string `json:"jobs"`
 }
 
 // MessageContent
 //  - Type: 		String containing type of data (eg. textMsg)
 //  - Content:	Content struct
 type MessageContent struct {
-	Type int 			`json:"type"`
-	Code CodeMessage 	`json:"code,omitempty"`
-	Job	 JobMessage		`json:"job,omitempty"`
+	Type int         `json:"type"`
+	Code CodeMessage `json:"code,omitempty"`
+	Job  JobMessage  `json:"job,omitempty"`
 }
 
 type ReadyMessage struct {
@@ -64,10 +64,9 @@ type ReadyMessage struct {
 //- Status: 		The type of response
 //- Content: Content of the response (not always there)
 type MessageToClient struct {
-	Status    	string  `json:"status"`
-	Content 	string 	`json:"content"`
+	Status  string `json:"status"`
+	Content string `json:"content"`
 }
-
 
 // Content
 // - TextMsg: If is of textMsg type,
@@ -116,7 +115,7 @@ func (c *Client) Read() {
 
 		err := c.Conn.Close()
 		if err != nil {
-			return 
+			return
 		}
 	}()
 
@@ -131,12 +130,11 @@ func (c *Client) Read() {
 		fmt.Println(message)
 
 		messageContent := &MessageContent{}
-
 		err = json.Unmarshal(p, &messageContent)
 		if err != nil {
 			log.Println(err)
 			c.Send(MessageToClient{
-				Status: "ERROR",
+				Status:  "ERROR",
 				Content: "Could not process json you sent",
 			})
 			return
@@ -149,24 +147,23 @@ func (c *Client) Read() {
 			fmt.Println("ProcessCode:", code.ExecuteCode)
 			fmt.Println("Requirements", code.Requirements)
 			c.Send(MessageToClient{
-				Status: "bruh",
+				Status:  "BRUH",
 				Content: "Received the message :)",
 			})
 		case 1:
 			jobs := messageContent.Job
 			fmt.Println(jobs.Jobs)
 			c.Send(MessageToClient{
-				Status: "bruh",
+				Status:  "BRUH",
 				Content: "Received the jobs :)",
 			})
 		default:
 			fmt.Println("Unrecognized type:", messageContent.Type)
 			c.Send(MessageToClient{
-				Status: "ERROR",
+				Status:  "ERROR",
 				Content: "I did not recognize the message content type you provided",
 			})
 		}
-
 
 	}
 }

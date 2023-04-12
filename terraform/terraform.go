@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
@@ -75,7 +76,7 @@ func (t *terraform) Initialize() {
 	fmt.Println("Terraform version:", state.FormatVersion) // "0.1"
 }
 
-func (t *terraform) Apply() map[string]tfexec.OutputMeta {
+func (t *terraform) Apply() {
 	ctx := context.Background()
 
 	// Run "terraform apply" to apply the changes
@@ -89,7 +90,17 @@ func (t *terraform) Apply() map[string]tfexec.OutputMeta {
 	if err != nil {
 		log.Fatalf("Error getting terraform output: %s", err)
 	}
-	//fmt.Printf("Terraform output: %s\n", output)
+	fmt.Printf("Terraform output: %s\n", output)
+	var ipMaps interface{}
+	errJson := json.Unmarshal([]byte(output["public-ip"].Value), &ipMaps)
+	if errJson != nil {
+		panic(err)
+	}
 
-	return output
+	// Navigate the interface using type assertions.
+	for uuid, ip := range ipMaps.(map[string]interface{}) {
+		ip = ip.(map[string]interface{})["public_ip"]
+		fmt.Printf("UUID: %s, IP: %s\n", uuid, ip)
+		// PING IP HERE TO SEND JOB
+	}
 }
