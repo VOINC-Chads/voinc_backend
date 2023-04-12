@@ -72,19 +72,18 @@ func main() {
 	terraformInstance := terraform.GetInstance()
 
 	output := terraformInstance.Apply()
-	var ipMaps []interface{}
+	var ipMaps interface{}
 	err := json.Unmarshal([]byte(output["public-ip"].Value), &ipMaps)
 	if err != nil {
 		panic(err)
 	}
 
 	// Navigate the interface using type assertions.
-	for _, ipMap := range ipMaps {
-		for uuid, ip := range ipMap.(map[string]interface{}) {
-			ip = ip.(map[string]interface{})["public-ip"].([]interface{})[0].(map[string]interface{})["server_public_ip"]
-			fmt.Printf("UUID: %s, IP: %s\n", uuid, ip)
-			// PING IP HERE TO SEND JOB
-		}
+	for uuid, ip := range ipMaps.(map[string]interface{}) {
+		ip = ip.(map[string]interface{})["public_ip"]
+		fmt.Printf("UUID: %s, IP: %s\n", uuid, ip)
+		// PING IP HERE TO SEND JOB
+
 	}
 
 	setupRoutes()

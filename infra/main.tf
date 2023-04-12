@@ -161,6 +161,6 @@ module "tasks"{
 }
 
 output "public-ip" {
-  #value =  {for task in module.tasks : task.uuid => task.public-ip }
-  value = module.tasks.*
+  value = { for idx, item in jsondecode(file("infra.json")) : item.uuid => module.tasks[idx] }
+  #value = module.tasks
 }

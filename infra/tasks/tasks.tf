@@ -34,6 +34,7 @@ module "workers" {
   master_ip         = module.masters.server_public_ip
 }
 
-output "public-ip" {
-  value = module.masters.*
+output "public_ip" {
+  value = module.masters.server_public_ip
 }
+
