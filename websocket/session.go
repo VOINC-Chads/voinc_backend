@@ -6,7 +6,17 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 )
+
+// For infra.json
+var (
+	mutex *sync.Mutex
+)
+
+func InitMutex(m *sync.Mutex) {
+	mutex = m
+}
 
 // Session
 //  - Register: Channel for clients to register to the Lobby
@@ -34,8 +44,10 @@ type InfraSession struct {
 
 func RegisterInfraSession(session Session) error {
 	// Open infra.json
+	mutex.Lock()
 	file, err := os.Open("infra/infra.json")
 	if err != nil {
+		mutex.Unlock()
 		return err
 	}
 	defer file.Close()
@@ -43,6 +55,7 @@ func RegisterInfraSession(session Session) error {
 	// Read the file contents
 	contents, err := ioutil.ReadAll(file)
 	if err != nil {
+		mutex.Unlock()
 		return err
 	}
 
@@ -50,6 +63,7 @@ func RegisterInfraSession(session Session) error {
 	var infraSessions []InfraSession
 	err = json.Unmarshal(contents, &infraSessions)
 	if err != nil {
+		mutex.Unlock()
 		return err
 	}
 	newInfraSession := InfraSession{
@@ -62,10 +76,12 @@ func RegisterInfraSession(session Session) error {
 	// write the updated list back to the JSON file
 	newJson, err := json.MarshalIndent(infraSessions, "", "  ")
 	if err != nil {
+		mutex.Unlock()
 		return err
 	}
 
 	errWrite := ioutil.WriteFile("infra/infra.json", newJson, 0644)
+	mutex.Unlock()
 	if errWrite != nil {
 		return errWrite
 	}
@@ -75,8 +91,10 @@ func RegisterInfraSession(session Session) error {
 
 func deRegisterInfraSession(session Session) {
 	// Open infra.json
+	mutex.Lock()
 	file, err := os.Open("infra/infra.json")
 	if err != nil {
+		mutex.Unlock()
 		fmt.Println(err)
 	}
 	defer file.Close()
@@ -84,6 +102,7 @@ func deRegisterInfraSession(session Session) {
 	// Read the file contents
 	contents, err := ioutil.ReadAll(file)
 	if err != nil {
+		mutex.Unlock()
 		fmt.Println(err)
 	}
 
@@ -91,6 +110,7 @@ func deRegisterInfraSession(session Session) {
 	var infraSessions []InfraSession
 	err = json.Unmarshal(contents, &infraSessions)
 	if err != nil {
+		mutex.Unlock()
 		fmt.Println(err)
 	}
 	// Identify the index of the Session to delete
@@ -104,7 +124,8 @@ func deRegisterInfraSession(session Session) {
 
 	// Couldn't find session
 	if indexToDelete == -1 {
-		fmt.Printf("Tried to delete session with UUID %s from infra.json but it wasn't there :(", session.UUID)
+		mutex.Unlock()
+		fmt.Printf("Tried to delete session with UUID %s from infra.json but it wasn't there :(\n", session.UUID)
 		return
 	}
 
@@ -114,10 +135,12 @@ func deRegisterInfraSession(session Session) {
 	// write the updated list back to the JSON file
 	newJson, err := json.MarshalIndent(infraSessions, "", "  ")
 	if err != nil {
+		mutex.Unlock()
 		fmt.Println(err)
 	}
 
 	errWrite := ioutil.WriteFile("infra/infra.json", newJson, 0644)
+	mutex.Unlock()
 	if errWrite != nil {
 		fmt.Println(err)
 	}

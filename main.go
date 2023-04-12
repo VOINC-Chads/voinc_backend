@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"net/http"
+	"sync"
 	"voinc-backend/stringgen"
 	"voinc-backend/terraform"
 	"voinc-backend/websocket"
@@ -12,6 +13,7 @@ import (
 
 var (
 	lobbies = make(map[string]*websocket.Session)
+	mutex   sync.Mutex // for infra.json
 )
 
 func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request, name string) {
@@ -71,6 +73,10 @@ func setupRoutes() {
 
 func main() {
 	// secretsFile, _ := ioutil.ReadFile("./secrets.json")
+
+	// Let's lock down infra.json eh
+	mutex := &sync.Mutex{}
+	websocket.InitMutex(mutex)
 
 	terraformInstance := terraform.GetInstance()
 
