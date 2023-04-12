@@ -1,18 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"net/http"
 	"voinc-backend/terraform"
-
-	"github.com/gorilla/mux"
 
 	"voinc-backend/stringgen"
 	"voinc-backend/websocket"
 )
 
 var (
-	lobbies  			= make(map[string]*websocket.Session)
+	lobbies = make(map[string]*websocket.Session)
 )
 
 func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request, name string) {
@@ -34,7 +34,7 @@ func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request,
 		ID:         stringgen.String(10),
 		PublicInfo: clientPublicInfo,
 		Conn:       conn,
-		Session:      session,
+		Session:    session,
 	}
 
 	session.Register <- client
@@ -71,8 +71,21 @@ func main() {
 	// terraform.Initialize()
 	terraformInstance := terraform.GetInstance()
 
-	terraformInstance.Apply()
+	output := terraformInstance.Apply()
+	var ipMaps []interface{}
+	err := json.Unmarshal([]byte(output["public-ip"].Value), &ipMaps)
+	if err != nil {
+		panic(err)
+	}
 
+	// Navigate the interface using type assertions.
+	for _, ipMap := range ipMaps {
+		for uuid, ip := range ipMap.(map[string]interface{}) {
+			ip = ip.(map[string]interface{})["public-ip"].([]interface{})[0].(map[string]interface{})["server_public_ip"]
+			fmt.Printf("UUID: %s, IP: %s\n", uuid, ip)
+			// PING IP HERE TO SEND JOB
+		}
+	}
 
 	setupRoutes()
 

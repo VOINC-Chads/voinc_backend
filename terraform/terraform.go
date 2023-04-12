@@ -1,24 +1,24 @@
 package terraform
 
 import (
-"context"
-"fmt"
-"log"
+	"context"
+	"fmt"
+	"log"
 	"sync"
 
 	"github.com/hashicorp/go-version"
-"github.com/hashicorp/hc-install/product"
-"github.com/hashicorp/hc-install/releases"
-"github.com/hashicorp/terraform-exec/tfexec"
+	"github.com/hashicorp/hc-install/product"
+	"github.com/hashicorp/hc-install/releases"
+	"github.com/hashicorp/terraform-exec/tfexec"
 )
 
 var lock = &sync.Mutex{}
 
 type terraform struct {
-	ctx 		context.Context
-	tf 			*tfexec.Terraform
-	execPath 	string
-	workingDir 	string
+	ctx        context.Context
+	tf         *tfexec.Terraform
+	execPath   string
+	workingDir string
 }
 
 var terraformInstance *terraform
@@ -75,7 +75,7 @@ func (t *terraform) Initialize() {
 	fmt.Println("Terraform version:", state.FormatVersion) // "0.1"
 }
 
-func (t *terraform) Apply() {
+func (t *terraform) Apply() map[string]tfexec.OutputMeta {
 	ctx := context.Background()
 
 	// Run "terraform apply" to apply the changes
@@ -89,5 +89,7 @@ func (t *terraform) Apply() {
 	if err != nil {
 		log.Fatalf("Error getting terraform output: %s", err)
 	}
-	fmt.Printf("Terraform output: %s\n", output)
+	//fmt.Printf("Terraform output: %s\n", output)
+
+	return output
 }
