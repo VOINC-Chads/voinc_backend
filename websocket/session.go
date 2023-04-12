@@ -1,7 +1,11 @@
 package websocket
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
 )
 
 // Session
@@ -23,15 +27,99 @@ type Session struct {
 	NumWorkers   int
 }
 
-type SessionInfra struct {
+type InfraSession struct {
 	UUID       string `json:"UUID"`
 	NumWorkers int    `json:"NumWorkers"`
 }
 
-func NewInfraSession(session Session) *SessionInfra {
-	return &SessionInfra{
+func RegisterInfraSession(session Session) error {
+	// Open infra.json
+	file, err := os.Open("infra/infra.json")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Read the file contents
+	contents, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	// Unmarshal the JSON data into an Array of InfraSession structs
+	var infraSessions []InfraSession
+	err = json.Unmarshal(contents, &infraSessions)
+	if err != nil {
+		return err
+	}
+	newInfraSession := InfraSession{
 		UUID:       session.UUID,
 		NumWorkers: session.NumWorkers,
+	}
+	// Add our new InfraSession
+	infraSessions = append(infraSessions, newInfraSession)
+
+	// write the updated list back to the JSON file
+	newJson, err := json.MarshalIndent(infraSessions, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	errWrite := ioutil.WriteFile("infra/infra.json", newJson, 0644)
+	if errWrite != nil {
+		return errWrite
+	}
+
+	return nil
+}
+
+func deRegisterInfraSession(session Session) {
+	// Open infra.json
+	file, err := os.Open("infra/infra.json")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer file.Close()
+
+	// Read the file contents
+	contents, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Unmarshal the JSON data into an Array of InfraSession structs
+	var infraSessions []InfraSession
+	err = json.Unmarshal(contents, &infraSessions)
+	if err != nil {
+		fmt.Println(err)
+	}
+	// Identify the index of the Session to delete
+	var indexToDelete int = -1
+	for i, p := range infraSessions {
+		if p.UUID == session.UUID {
+			indexToDelete = i
+			break
+		}
+	}
+
+	// Couldn't find session
+	if indexToDelete == -1 {
+		fmt.Printf("Tried to delete session with UUID %s from infra.json but it wasn't there :(", session.UUID)
+		return
+	}
+
+	// Remove the session
+	infraSessions = append(infraSessions[:indexToDelete], infraSessions[indexToDelete+1:]...)
+
+	// write the updated list back to the JSON file
+	newJson, err := json.MarshalIndent(infraSessions, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	errWrite := ioutil.WriteFile("infra/infra.json", newJson, 0644)
+	if errWrite != nil {
+		fmt.Println(err)
 	}
 }
 
@@ -57,6 +145,7 @@ func (session *Session) Start() {
 
 		case client := <-session.Unregister:
 			log.Println("Session ended :'(")
+			deRegisterInfraSession(*session)
 			if client == session.Host {
 				log.Println("Host unregister")
 			}

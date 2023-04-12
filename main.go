@@ -1,12 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"net/http"
 	"voinc-backend/stringgen"
+	"voinc-backend/terraform"
 	"voinc-backend/websocket"
 )
 
@@ -21,9 +21,11 @@ func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request,
 		fmt.Fprintf(w, "%+v\n", err)
 		return
 	}
-	infraSession := websocket.NewInfraSession(*session)
-	b, _ := json.Marshal(infraSession)
-	fmt.Println(string(b))
+	errInfra := websocket.RegisterInfraSession(*session)
+	if errInfra != nil {
+		fmt.Fprintf(w, "%+v\n", errInfra)
+		return
+	}
 
 	clientPublicInfo := &websocket.ClientPublicInfo{
 		Name:   name,
@@ -70,9 +72,9 @@ func setupRoutes() {
 func main() {
 	// secretsFile, _ := ioutil.ReadFile("./secrets.json")
 
-	//terraformInstance := terraform.GetInstance()
-	//
-	//terraformInstance.Apply()
+	terraformInstance := terraform.GetInstance()
+
+	terraformInstance.Apply()
 
 	setupRoutes()
 

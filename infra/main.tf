@@ -152,8 +152,8 @@ module "tasks"{
   for_each = { for idx, item in jsondecode(file("infra.json")) : idx => item }
   source   = "./tasks"
 
-  uuid              = each.value.uuid
-  n                 = each.value.n
+  uuid              = each.value.UUID
+  n                 = each.value.NumWorkers
   subnet_id         = aws_subnet.subnets[each.key].id
   security_group_id = aws_security_group.sgs.id
   gateway_id        = aws_internet_gateway.igws
@@ -161,6 +161,6 @@ module "tasks"{
 }
 
 output "public-ip" {
-  value = { for idx, item in jsondecode(file("infra.json")) : item.uuid => module.tasks[idx] }
+  value = { for idx, item in jsondecode(file("infra.json")) : item.UUID => module.tasks[idx] }
   #value = module.tasks
 }
