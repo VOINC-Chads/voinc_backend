@@ -3,65 +3,65 @@ locals {
 }
 
 resource "aws_vpc" "vpcs" {
-  count = length(local.infra)
+  #count = length(local.infra)
 
-  cidr_block = "10.${count.index}.0.0/16"
+  cidr_block = "10.0.0.0/16"
   tags = {
-    Name = local.infra[count.index].uuid
+    Name = "master-vpc"
   }
 }
 
 resource "aws_internet_gateway" "igws" {
-  count = length(aws_vpc.vpcs)
+  #count = length(aws_vpc.vpcs)
 
-  vpc_id = aws_vpc.vpcs[count.index].id
+  vpc_id = aws_vpc.vpcs.id
   tags = {
-    Name = "${aws_vpc.vpcs[count.index].tags.Name}-igw"
+    Name = "${aws_vpc.vpcs.tags.Name}-igw"
   }
 }
 
 resource "aws_route_table" "route-tables" {
-  count = length(aws_vpc.vpcs)
+  #count = length(aws_vpc.vpcs)
 
-  vpc_id = aws_vpc.vpcs[count.index].id
+  vpc_id = aws_vpc.vpcs.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igws[count.index].id
+    gateway_id = aws_internet_gateway.igws.id
   }
 
   route {
     ipv6_cidr_block = "::/0"
-    gateway_id      = aws_internet_gateway.igws[count.index].id
+    gateway_id      = aws_internet_gateway.igws.id
   }
 
   tags = {
-    Name = "${aws_vpc.vpcs[count.index].tags.Name}-route-table"
+    Name = "${aws_vpc.vpcs.tags.Name}-route-table"
   }
 }
 
 resource "aws_subnet" "subnets" {
-  count = length(aws_vpc.vpcs)
+  count = length(local.infra)
 
-  vpc_id = aws_vpc.vpcs[count.index].id
-  cidr_block = "10.${count.index}.1.0/24"
+  vpc_id = aws_vpc.vpcs.id
+  cidr_block = "10.0.${count.index}.0/24"
   availability_zone = "us-east-2c"
   tags = {
-    Name = "${aws_vpc.vpcs[count.index].tags.Name}-subnet"
+    Name = "${count.index}-subnet"
   }
 }
 
 resource "aws_route_table_association" "instance-route-table-assoc" {
-  count = length(aws_vpc.vpcs)
+  count = length(aws_subnet.subnets)
   subnet_id      = aws_subnet.subnets[count.index].id
-  route_table_id = aws_route_table.route-tables[count.index].id
+  route_table_id = aws_route_table.route-tables.id
 }
 
 resource "aws_security_group" "sgs" {
-  count = length(local.infra)
+  #count = length(local.infra)
   name        = "allow_web_traffic"
   description = "Allow Web inbound traffic"
-  vpc_id      = aws_vpc.vpcs[count.index].id
+  vpc_id      = aws_vpc.vpcs.id
 
   ingress {
     description = "SSH"
@@ -103,7 +103,7 @@ resource "aws_security_group" "sgs" {
   }
 
   tags = {
-    Name = "${aws_vpc.vpcs[count.index].tags.Name}-allow_web"
+    Name = "${aws_vpc.vpcs.tags.Name}-allow_web"
   }
 }
 
@@ -155,10 +155,12 @@ module "tasks"{
   uuid              = each.value.uuid
   n                 = each.value.n
   subnet_id         = aws_subnet.subnets[each.key].id
-  security_group_id = aws_security_group.sgs[each.key].id
-  gateway_id        = aws_internet_gateway.igws[each.key]
+  security_group_id = aws_security_group.sgs.id
+  gateway_id        = aws_internet_gateway.igws
+
 }
 
 output "public-ip" {
+  #value =  {for task in module.tasks : task.uuid => task.public-ip }
   value = module.tasks.*
 }

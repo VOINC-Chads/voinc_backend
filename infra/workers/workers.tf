@@ -10,16 +10,8 @@ resource "aws_instance" "ec2_worker" {
   iam_instance_profile = "ec2-profile"
 
   associate_public_ip_address = false
-  
-  user_data = <<EOF
-         #!/bin/bash
-         sudo yum update -y
-         sudo yum install docker
-         sudo systemctl start docker
-         sudo aws ecr get-login-password --region us-east-2 | sudo docker login --username AWS --password-stdin 997625559881.dkr.ecr.us-east-2.amazonaws.com
-         sudo docker pull 997625559881.dkr.ecr.us-east-2.amazonaws.com/voinc_repo:${var.image}
-         docker run -p 8000:8000 ${var.image} --ip ${var.master_ip}
-         EOF
+
+  user_data_base64 = "${base64encode(file("workers/startup.sh"))}"
 
   tags = {
     Name = var.name
