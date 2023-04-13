@@ -150,6 +150,12 @@ func (c *Client) Read() {
 				Status:  "BRUH",
 				Content: "Received the message :)",
 			})
+			// Make API Call to ipToSendTo with Code!
+			//ipToSendTo, ok := (*Sessions)[c.Session.UUID]
+			//if !ok {
+			//	fmt.Printf("UUID: %s is not in Sessions map, maybe the EC2 instance isn't up yet?\n", c.Session.UUID)
+			//	return
+			//}
 		case 1:
 			jobs := messageContent.Job
 			fmt.Println(jobs.Jobs)
@@ -157,6 +163,12 @@ func (c *Client) Read() {
 				Status:  "BRUH",
 				Content: "Received the jobs :)",
 			})
+			// Make API Call to ipToSendTo to do the job
+			//ipToSendTo, ok := (*Sessions)[c.Session.UUID]
+			//if !ok {
+			//	fmt.Printf("UUID: %s is not in Sessions map, maybe the EC2 instance isn't up yet?\n", c.Session.UUID)
+			//	return
+			//}
 		default:
 			fmt.Println("Unrecognized type:", messageContent.Type)
 			c.Send(MessageToClient{

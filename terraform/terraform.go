@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"voinc-backend/websocket"
 
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
@@ -101,6 +102,6 @@ func (t *terraform) Apply() {
 	for uuid, ip := range ipMaps.(map[string]interface{}) {
 		ip = ip.(map[string]interface{})["public_ip"]
 		fmt.Printf("UUID: %s, IP: %s\n", uuid, ip)
-		// PING IP HERE TO SEND JOB
+		(*websocket.Sessions)[uuid] = ip.(string) // Update ip of each uuid
 	}
 }

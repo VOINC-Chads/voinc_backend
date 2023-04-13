@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	lobbies = make(map[string]*websocket.Session)
-	mutex   sync.Mutex // for infra.json
+	lobbies  = make(map[string]*websocket.Session)
+	mutex    sync.Mutex // for infra.json
+	Sessions map[string]string
 )
 
 func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request, name string) {
@@ -77,6 +78,10 @@ func main() {
 	// Let's lock down infra.json eh
 	mutex := &sync.Mutex{}
 	websocket.InitMutex(mutex)
+
+	// Let's map UUID's to Session objects
+	sessions := &map[string]string{}
+	websocket.InitSessionMap(sessions)
 
 	terraformInstance := terraform.GetInstance()
 

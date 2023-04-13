@@ -9,13 +9,16 @@ import (
 	"sync"
 )
 
-// For infra.json
 var (
-	mutex *sync.Mutex
+	mutex    *sync.Mutex        // For infra.json
+	Sessions *map[string]string // For Terraform Module
 )
 
 func InitMutex(m *sync.Mutex) {
 	mutex = m
+}
+func InitSessionMap(s *map[string]string) {
+	Sessions = s
 }
 
 // Session
