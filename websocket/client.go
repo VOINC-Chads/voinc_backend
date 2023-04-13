@@ -199,10 +199,7 @@ func (c *Client) Read() {
 		fmt.Println(message)
 
 		messageContent := &MessageContent{}
-		// {"type":1,"job":{"jobs":["1","2"]}}
-		// "{\"type\":1,\"job\":{\"jobs\":[\"1\",\"2\"]}}"
-		// "{\"type\":1,\"job\":{\"jobs\":[\"1\",\"2\"]}}"
-		// "{\"type\":1,\"job\":{\"jobs\":[\"1\",\"2\"]}}"
+
 		err = json.Unmarshal([]byte(strings.Replace(string(p)[1:len(string(p))-1], `\"`, `"`, 100)), &messageContent)
 		if err != nil {
 			log.Println(err)
