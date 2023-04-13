@@ -88,7 +88,6 @@ func RegisterInfraSession(session Session) error {
 	if errWrite != nil {
 		return errWrite
 	}
-
 	return nil
 }
 

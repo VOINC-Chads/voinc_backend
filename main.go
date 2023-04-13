@@ -29,6 +29,7 @@ func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request,
 		fmt.Fprintf(w, "%+v\n", errInfra)
 		return
 	}
+	terraform.GetInstance().Apply()
 
 	clientPublicInfo := &websocket.ClientPublicInfo{
 		Name:   name,
@@ -83,9 +84,9 @@ func main() {
 	sessions := &map[string]string{}
 	websocket.InitSessionMap(sessions)
 
-	terraformInstance := terraform.GetInstance()
-
-	terraformInstance.Apply()
+	//terraformInstance := terraform.GetInstance()
+	//
+	//terraformInstance.Apply()
 
 	setupRoutes()
 

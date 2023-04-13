@@ -1,9 +1,13 @@
 package websocket
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -102,6 +106,71 @@ type GetConversation struct {
 	ClientID       string `json:"clientID"`
 }
 
+func sendCode(ip string, code string) (string, error) {
+	data := map[string]string{"code": code}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", "http://"+ip+":8000/code", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil || !strings.Contains(resp.Status, "200") {
+		return "", err
+	}
+	fmt.Println("CODE BODY: ", body)
+
+	fmt.Println("Send Code Status:", resp.Status)
+	return resp.Status, nil
+}
+
+func sendJobs(ip string, jobs []string) (string, error) {
+	data := map[string]string{"jobs": "[" + strings.Join(jobs, ", ") + "]"}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", "http://"+ip+":8000/jobs", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil || !strings.Contains(resp.Status, "200") {
+		return "", err
+	}
+
+	fmt.Println("Send Job Status:", resp.Status)
+	return string(body), nil
+}
+
 func (c *Client) Send(v interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -130,7 +199,11 @@ func (c *Client) Read() {
 		fmt.Println(message)
 
 		messageContent := &MessageContent{}
-		err = json.Unmarshal(p, &messageContent)
+		// {"type":1,"job":{"jobs":["1","2"]}}
+		// "{\"type\":1,\"job\":{\"jobs\":[\"1\",\"2\"]}}"
+		// "{\"type\":1,\"job\":{\"jobs\":[\"1\",\"2\"]}}"
+		// "{\"type\":1,\"job\":{\"jobs\":[\"1\",\"2\"]}}"
+		err = json.Unmarshal([]byte(strings.Replace(string(p)[1:len(string(p))-1], `\"`, `"`, 100)), &messageContent)
 		if err != nil {
 			log.Println(err)
 			c.Send(MessageToClient{
@@ -139,23 +212,31 @@ func (c *Client) Read() {
 			})
 			return
 		}
-
 		switch messageContent.Type {
 		case 0:
 			code := messageContent.Code
-			fmt.Println("ExecuteCode:", code.ProcessCode)
-			fmt.Println("ProcessCode:", code.ExecuteCode)
+			fmt.Println("ProcessCode:", code.ProcessCode)
+			fmt.Println("ExecuteCode:", code.ExecuteCode)
 			fmt.Println("Requirements", code.Requirements)
 			c.Send(MessageToClient{
 				Status:  "BRUH",
 				Content: "Received the message :)",
 			})
 			// Make API Call to ipToSendTo with Code!
-			//ipToSendTo, ok := (*Sessions)[c.Session.UUID]
-			//if !ok {
-			//	fmt.Printf("UUID: %s is not in Sessions map, maybe the EC2 instance isn't up yet?\n", c.Session.UUID)
-			//	return
-			//}
+			ipToSendTo, ok := (*Sessions)[c.Session.UUID]
+			if !ok {
+				fmt.Printf("UUID: %s is not in Sessions map, maybe the EC2 instance isn't up yet?\n", c.Session.UUID)
+				return
+			}
+			status, err := sendCode(ipToSendTo, code.ExecuteCode)
+			if err != nil || !strings.Contains(status, "200") {
+				fmt.Println(err)
+				// TELL CLIENT WE DID BAD
+				c.Send(MessageToClient{
+					Status:  "ERROR",
+					Content: "Sending your code failed",
+				})
+			}
 		case 1:
 			jobs := messageContent.Job
 			fmt.Println(jobs.Jobs)
@@ -164,11 +245,25 @@ func (c *Client) Read() {
 				Content: "Received the jobs :)",
 			})
 			// Make API Call to ipToSendTo to do the job
-			//ipToSendTo, ok := (*Sessions)[c.Session.UUID]
-			//if !ok {
-			//	fmt.Printf("UUID: %s is not in Sessions map, maybe the EC2 instance isn't up yet?\n", c.Session.UUID)
-			//	return
-			//}
+			ipToSendTo, ok := (*Sessions)[c.Session.UUID]
+			if !ok {
+				fmt.Printf("UUID: %s is not in Sessions map, maybe the EC2 instance isn't up yet?\n", c.Session.UUID)
+				return
+			}
+			responseBody, err := sendJobs(ipToSendTo, jobs.Jobs)
+			if err != nil {
+				fmt.Println(err)
+				// TELL CLIENT WE DID BAD
+				c.Send(MessageToClient{
+					Status:  "ERROR",
+					Content: "Sending your jobs failed",
+				})
+			}
+			fmt.Println(responseBody)
+			c.Send(MessageToClient{
+				Status:  "BRUH",
+				Content: responseBody,
+			})
 		default:
 			fmt.Println("Unrecognized type:", messageContent.Type)
 			c.Send(MessageToClient{
