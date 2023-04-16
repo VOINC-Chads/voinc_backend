@@ -84,9 +84,9 @@ func main() {
 	sessions := &map[string]string{}
 	websocket.InitSessionMap(sessions)
 
-	terraformInstance := terraform.GetInstance()
+	// terraformInstance := terraform.GetInstance()
 
-	terraformInstance.Apply()
+	// terraformInstance.Apply()
 
 	setupRoutes()
 

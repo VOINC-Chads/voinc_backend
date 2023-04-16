@@ -34,7 +34,7 @@ jobs:
           source ~/.bashrc
           export PATH=$PATH:/usr/local/go/bin
           go build .
-          ./voinc-backend
+          nohup ./voinc-backend &
 
     env:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
