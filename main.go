@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sync"
 	"voinc-backend/stringgen"
-	"voinc-backend/terraform"
 	"voinc-backend/websocket"
 )
 
@@ -29,7 +28,6 @@ func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request,
 		fmt.Fprintf(w, "%+v\n", errInfra)
 		return
 	}
-	terraform.GetInstance().Apply()
 
 	clientPublicInfo := &websocket.ClientPublicInfo{
 		Name:   name,

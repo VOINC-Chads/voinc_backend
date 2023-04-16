@@ -215,10 +215,6 @@ func (c *Client) Read() {
 			fmt.Println("ProcessCode:", code.ProcessCode)
 			fmt.Println("ExecuteCode:", code.ExecuteCode)
 			fmt.Println("Requirements", code.Requirements)
-			c.Send(MessageToClient{
-				Status:  "BRUH",
-				Content: "Received the message :)",
-			})
 			// Make API Call to ipToSendTo with Code!
 			ipToSendTo, ok := (*Sessions)[c.Session.UUID]
 			if !ok {
@@ -234,6 +230,10 @@ func (c *Client) Read() {
 					Content: "Sending your code failed",
 				})
 			}
+			c.Send(MessageToClient{
+				Status:  "RECEIVED",
+				Content: "Received the message :)",
+			})
 		case 1:
 			jobs := messageContent.Job
 			fmt.Println(jobs.Jobs)
@@ -258,7 +258,7 @@ func (c *Client) Read() {
 			}
 			fmt.Println(responseBody)
 			c.Send(MessageToClient{
-				Status:  "BRUH",
+				Status:  "COMPLETE",
 				Content: responseBody,
 			})
 		default:
