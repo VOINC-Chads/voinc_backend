@@ -61,7 +61,7 @@ func setupRoutes() {
 		// enable CORS to allow browser to make call to API
 		enableCors(&w)
 
-		lobby := websocket.NewSession("clientID", "secretID", uuid.New().String(), 0)
+		lobby := websocket.NewSession("clientID", "secretID", uuid.New().String(), 1)
 
 		go lobby.Start()
 

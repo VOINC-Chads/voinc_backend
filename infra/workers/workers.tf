@@ -9,9 +9,9 @@ resource "aws_instance" "ec2_worker" {
   # Full access to ECR
   iam_instance_profile = "ec2-profile"
 
-  associate_public_ip_address = false
+  associate_public_ip_address = true
 
-  user_data_base64 = "${base64encode(file("workers/startup.sh"))}"
+  user_data = templatefile("workers/startup.sh", { master_ip = var.master_ip })
 
   tags = {
     Name = var.name

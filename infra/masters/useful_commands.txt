@@ -10,3 +10,11 @@
 
 # PULL FROM ECR
 # sudo docker pull 997625559881.dkr.ecr.us-east-2.amazonaws.com/voinc_repo:<INSTANCE_UUID>
+
+docker build -t voinc-master -f MainDockerfile .
+docker tag voinc-master 997625559881.dkr.ecr.us-east-2.amazonaws.com/voinc_repo:voinc-master
+docker push 997625559881.dkr.ecr.us-east-2.amazonaws.com/voinc_repo:voinc-master
+
+docker build -t voinc-worker -f WorkerDockerfile .
+docker tag voinc-worker 997625559881.dkr.ecr.us-east-2.amazonaws.com/voinc_repo:voinc-worker
+docker push 997625559881.dkr.ecr.us-east-2.amazonaws.com/voinc_repo:voinc-worker

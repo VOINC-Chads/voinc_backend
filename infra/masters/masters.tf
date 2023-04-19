@@ -11,7 +11,7 @@ resource "aws_instance" "ec2_master" {
 
   associate_public_ip_address = true
   #user_data_base64 = "${base64encode(file("masters/startup.sh"))}"
-  user_data = templatefile("masters/startup.sh", { timestamp = timestamp() })
+  user_data = file("masters/startup.sh")
 
 
   tags = {
