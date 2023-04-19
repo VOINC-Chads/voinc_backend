@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"voinc-backend/terraform"
 )
 
 var (
@@ -88,6 +89,7 @@ func RegisterInfraSession(session Session) error {
 	if errWrite != nil {
 		return errWrite
 	}
+	terraform.GetInstance().Apply(Sessions)
 	return nil
 }
 
@@ -146,6 +148,7 @@ func deRegisterInfraSession(session Session) {
 	if errWrite != nil {
 		fmt.Println(err)
 	}
+	terraform.GetInstance().Apply(Sessions)
 }
 
 // NewSession

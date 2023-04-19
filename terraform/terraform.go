@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
-	"sync"
-	"voinc-backend/websocket"
-
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/terraform-exec/tfexec"
+	"log"
+	"sync"
 )
 
 var lock = &sync.Mutex{}
@@ -77,7 +75,7 @@ func (t *terraform) Initialize() {
 	fmt.Println("Terraform version:", state.FormatVersion) // "0.1"
 }
 
-func (t *terraform) Apply() {
+func (t *terraform) Apply(uuidToIP *map[string]string) {
 	ctx := context.Background()
 
 	// Run "terraform apply" to apply the changes
@@ -103,6 +101,6 @@ func (t *terraform) Apply() {
 	for uuid, ip := range ipMaps.(map[string]interface{}) {
 		ip = ip.(map[string]interface{})["public_ip"]
 		fmt.Printf("UUID: %s, IP: %s\n", uuid, ip)
-		(*websocket.Sessions)[uuid] = ip.(string) // Update ip of each uuid
+		(*uuidToIP)[uuid] = ip.(string) // Update ip of each uuid
 	}
 }
