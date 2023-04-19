@@ -1,15 +1,14 @@
 package websocket
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"strings"
 	"sync"
 
+	"voinc-backend/client"
 	"github.com/gorilla/websocket"
 )
 
@@ -22,6 +21,7 @@ type Client struct {
 	PublicInfo *ClientPublicInfo
 	Conn       *websocket.Conn
 	Session    *Session
+	ZMQClient  *client.Client
 	mu         sync.Mutex
 }
 
@@ -106,69 +106,37 @@ type GetConversation struct {
 	ClientID       string `json:"clientID"`
 }
 
-func sendCode(ip string, code string) (string, error) {
-	data := map[string]string{"code": code}
-
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return "", err
+func (c *Client) isReady() bool {
+	if c.ZMQClient != nil {
+		return true
 	}
 
-	req, err := http.NewRequest("POST", "http://"+ip+":8000/code", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "", err
+	ip, ok := (*Sessions)[c.Session.UUID]
+	// If the key exists
+	if ok {
+		// Do something
+		c.ZMQClient = client.InitializeClient(ip, 8000)
+		return true
 	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil || !strings.Contains(resp.Status, "200") {
-		return "", err
-	}
-	fmt.Println("CODE BODY: ", body)
-
-	fmt.Println("Send Code Status:", resp.Status)
-	return resp.Status, nil
+	return false
 }
 
-func sendJobs(ip string, jobs []string) (string, error) {
-	data := map[string]string{"jobs": "[" + strings.Join(jobs, ", ") + "]"}
-
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return "", err
+func (c *Client) sendCode(requirements string, processCode string, executeCode string) {
+	if !c.isReady() {
+		errors.New("backend not ready")
 	}
 
-	req, err := http.NewRequest("POST", "http://"+ip+":8000/jobs", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "", err
+	fmt.Println("Sending code", requirements, processCode, executeCode)
+	c.ZMQClient.SendCode(requirements, processCode, executeCode)
+}
+
+func (c *Client) sendJobs(jobs []string) {
+	if !c.isReady() {
+		errors.New("backend not ready")
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil || !strings.Contains(resp.Status, "200") {
-		return "", err
-	}
-
-	fmt.Println("Send Job Status:", resp.Status)
-	return string(body), nil
+	fmt.Println("Sending jobs", jobs)
+	c.ZMQClient.SendJobs(jobs)
 }
 
 func (c *Client) Send(v interface{}) error {
@@ -212,28 +180,12 @@ func (c *Client) Read() {
 		switch messageContent.Type {
 		case 0:
 			code := messageContent.Code
-			fmt.Println("ProcessCode:", code.ProcessCode)
-			fmt.Println("ExecuteCode:", code.ExecuteCode)
-			fmt.Println("Requirements", code.Requirements)
-			// Make API Call to ipToSendTo with Code!
-			ipToSendTo, ok := (*Sessions)[c.Session.UUID]
-			if !ok {
-				fmt.Printf("UUID: %s is not in Sessions map, maybe the EC2 instance isn't up yet?\n", c.Session.UUID)
-				return
-			}
-			status, err := sendCode(ipToSendTo, code.ExecuteCode)
-			if err != nil || !strings.Contains(status, "200") {
-				fmt.Println(err)
-				// TELL CLIENT WE DID BAD
-				c.Send(MessageToClient{
-					Status:  "ERROR",
-					Content: "Sending your code failed",
-				})
-			}
 			c.Send(MessageToClient{
-				Status:  "RECEIVED",
+				Status:  "BRUH",
 				Content: "Received the message :)",
 			})
+
+			c.sendCode(code.Requirements, code.ProcessCode, code.ExecuteCode)
 		case 1:
 			jobs := messageContent.Job
 			fmt.Println(jobs.Jobs)
@@ -241,26 +193,9 @@ func (c *Client) Read() {
 				Status:  "BRUH",
 				Content: "Received the jobs :)",
 			})
+
 			// Make API Call to ipToSendTo to do the job
-			ipToSendTo, ok := (*Sessions)[c.Session.UUID]
-			if !ok {
-				fmt.Printf("UUID: %s is not in Sessions map, maybe the EC2 instance isn't up yet?\n", c.Session.UUID)
-				return
-			}
-			responseBody, err := sendJobs(ipToSendTo, jobs.Jobs)
-			if err != nil {
-				fmt.Println(err)
-				// TELL CLIENT WE DID BAD
-				c.Send(MessageToClient{
-					Status:  "ERROR",
-					Content: "Sending your jobs failed",
-				})
-			}
-			fmt.Println(responseBody)
-			c.Send(MessageToClient{
-				Status:  "COMPLETE",
-				Content: responseBody,
-			})
+			c.sendJobs(jobs.Jobs)
 		default:
 			fmt.Println("Unrecognized type:", messageContent.Type)
 			c.Send(MessageToClient{

@@ -41,6 +41,7 @@ func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request,
 		PublicInfo: clientPublicInfo,
 		Conn:       conn,
 		Session:    session,
+		ZMQClient: 	nil,
 	}
 
 	session.Register <- client
