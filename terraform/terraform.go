@@ -95,7 +95,8 @@ func (t *terraform) Apply() {
 	var ipMaps interface{}
 	errJson := json.Unmarshal([]byte(output["public-ip"].Value), &ipMaps)
 	if errJson != nil {
-		panic(err)
+		// TODO: Fix this?
+		//panic(errJson)
 	}
 
 	// Navigate the interface using type assertions.

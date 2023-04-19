@@ -1,0 +1,87 @@
+
+syntax="proto3";
+
+enum Role {
+    ROLE_UNKNOWN = 0;
+    ROLE_VOLUNTEER = 1;
+}
+
+// an enumeration for the status of the message request
+enum Status {
+    STATUS_UNKNOWN = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_FAILURE = 2;
+    STATUS_CHECK_AGAIN = 3;   // when the server is not ready to provide info as yet
+}
+
+enum MsgTypes {
+    TYPE_UNKNOWN = 0;
+    TYPE_REGISTER = 1;  // used by pub, sub and broker.
+    TYPE_JOB = 2;
+    TYPE_CODE = 3;
+    TYPE_HEARTBEAT = 4;
+}
+
+
+message Heartbeat
+{
+
+}
+
+message RegistrantInfo {
+    string id = 1;  // name of the entity
+    string addr = 2; // IP address (only for publisher)
+    uint32 port = 3; // port number (only for publisher)
+    uint32 capacity = 4;
+}
+
+message CodeMsg
+{
+    string requirements = 1;
+    string process_code = 2;
+    string execute_code = 3;
+}
+
+message RegisterReq
+{
+    Role role = 1;   // enum indicating what role we are playing
+    RegistrantInfo info = 2; // info about the registrant
+}
+
+
+message JobResult {
+    string value = 1;
+    string result = 2;
+}
+
+message JobResp
+{
+    Status status = 1;
+    repeated JobResult results = 2;
+}
+
+message JobMsg
+{
+    repeated string jobs = 1;
+}
+
+message MainReq
+{
+        MsgTypes msg_type = 1;
+        oneof Content {
+                JobMsg job_msg = 2;
+                CodeMsg code_msg = 3;
+                Heartbeat heartbeat = 4;
+                RegisterReq register_req = 5;
+        }
+}
+
+// Response to discovery req will be similar oneof of the responses.
+message MainResp
+{
+        MsgTypes msg_type = 1;
+        oneof Content {
+              JobResp job_resp = 2;
+              Heartbeat heartbeat = 3;
+        }
+}
