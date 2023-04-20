@@ -36,7 +36,7 @@ jobs:
           go get
           go build .
           sudo touch nohupout.out
-          sudo nohup ./voinc-backend > nohupout.out &
+          sudo sh -c 'nohup ./voinc-backend > nohupout.out 2>&1 &'
 
     env:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
