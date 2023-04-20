@@ -41,7 +41,7 @@ jobs:
           go get
           go build .
           sudo touch nohupout.out
-          chmod 777 nohupout.out
+          sudo chmod 777 nohupout.out
           nohup ./voinc-backend > nohupout.out 2>&1 &
 
     env:
