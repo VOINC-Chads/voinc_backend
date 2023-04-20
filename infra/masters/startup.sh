@@ -9,4 +9,4 @@ TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-meta
 echo "TOKEN: $TOKEN"
 INSTANCE_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/public-ipv4)
 echo "IP: ${INSTANCE_IP}"
-sudo docker run --name master-run -p 8000:8000 -e ZK_IP_ADDR="$INSTANCE_IP" 997625559881.dkr.ecr.us-east-2.amazonaws.com/voinc_repo:voinc-master
+sudo docker run --name master-run -p 8000:8000 -e ZK_IP_ADDR="$INSTANCE_IP" --restart always 997625559881.dkr.ecr.us-east-2.amazonaws.com/voinc_repo:voinc-master

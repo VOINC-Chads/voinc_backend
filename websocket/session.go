@@ -144,11 +144,11 @@ func deRegisterInfraSession(session Session) {
 	}
 
 	errWrite := ioutil.WriteFile("infra/infra.json", newJson, 0644)
-	mutex.Unlock()
 	if errWrite != nil {
 		fmt.Println(err)
 	}
 	terraform.GetInstance().Apply(Sessions)
+	mutex.Unlock()
 }
 
 // NewSession
@@ -170,6 +170,7 @@ func (session *Session) Start() {
 		select {
 		case client := <-session.Register:
 			client.Send(Message{Type: 1, Body: "Connected to session"})
+			go client.isReady()
 
 		case client := <-session.Unregister:
 			log.Println("Session ended :'(")

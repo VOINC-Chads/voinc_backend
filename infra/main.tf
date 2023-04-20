@@ -89,6 +89,14 @@ resource "aws_security_group" "sgs" {
 
   ingress {
     description = "HTTP"
+    from_port   = 8001
+    to_port     = 8001
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTP"
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
@@ -165,7 +173,7 @@ resource "aws_security_group" "sgs" {
 # }
 
 module "tasks"{
-  for_each = { for idx, item in jsondecode(file("infra.json")) : idx => item }
+  for_each = { for idx, item in local.infra : idx => item }
   source   = "./tasks"
 
   uuid              = each.value.UUID
@@ -177,6 +185,6 @@ module "tasks"{
 }
 
 output "public-ip" {
-  value = { for idx, item in jsondecode(file("infra.json")) : item.UUID => module.tasks[idx] }
+  value = { for idx, item in local.infra : item.UUID => module.tasks[idx] }
   #value = module.tasks
 }

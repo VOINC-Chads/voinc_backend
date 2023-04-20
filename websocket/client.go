@@ -5,11 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
+	"strconv"
 	"sync"
+	"time"
+	"voinc-backend/commons"
 
-	"voinc-backend/client"
 	"github.com/gorilla/websocket"
+	"voinc-backend/client"
 )
 
 // Client
@@ -64,14 +66,6 @@ type ReadyMessage struct {
 	Status bool `json:"status"`
 }
 
-// MessageToClient
-//- Status: 		The type of response
-//- Content: Content of the response (not always there)
-type MessageToClient struct {
-	Status  string `json:"status"`
-	Content string `json:"content"`
-}
-
 // Content
 // - TextMsg: If is of textMsg type,
 type Content struct {
@@ -106,7 +100,21 @@ type GetConversation struct {
 	ClientID       string `json:"clientID"`
 }
 
+func (c *Client) ReadyPoller() {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			if c.isReady() {
+				return
+			}
+		}
+	}
+}
+
 func (c *Client) isReady() bool {
+	fmt.Println("isReady()")
 	if c.ZMQClient != nil {
 		return true
 	}
@@ -116,6 +124,8 @@ func (c *Client) isReady() bool {
 	if ok {
 		// Do something
 		c.ZMQClient = client.InitializeClient(ip, 8000)
+		go c.ZMQClient.Listen(c.Send)
+		c.ZMQClient.SendHeartbeat()
 		return true
 	}
 	return false
@@ -167,11 +177,12 @@ func (c *Client) Read() {
 		fmt.Println(message)
 
 		messageContent := &MessageContent{}
-
-		err = json.Unmarshal([]byte(strings.Replace(string(p)[1:len(string(p))-1], `\"`, `"`, 100)), &messageContent)
+		unquotedP, _ := strconv.Unquote(string(p))
+		log.Println(unquotedP)
+		err = json.Unmarshal([]byte(unquotedP), &messageContent)
 		if err != nil {
 			log.Println(err)
-			c.Send(MessageToClient{
+			c.Send(commons.MessageToClient{
 				Status:  "ERROR",
 				Content: "Could not process json you sent",
 			})
@@ -180,16 +191,17 @@ func (c *Client) Read() {
 		switch messageContent.Type {
 		case 0:
 			code := messageContent.Code
-			c.Send(MessageToClient{
+			c.Send(commons.MessageToClient{
 				Status:  "BRUH",
 				Content: "Received the message :)",
 			})
 
+			fmt.Println("Sending code", code.Requirements, code.ProcessCode, code.ExecuteCode)
 			c.sendCode(code.Requirements, code.ProcessCode, code.ExecuteCode)
 		case 1:
 			jobs := messageContent.Job
 			fmt.Println(jobs.Jobs)
-			c.Send(MessageToClient{
+			c.Send(commons.MessageToClient{
 				Status:  "BRUH",
 				Content: "Received the jobs :)",
 			})
@@ -198,7 +210,7 @@ func (c *Client) Read() {
 			c.sendJobs(jobs.Jobs)
 		default:
 			fmt.Println("Unrecognized type:", messageContent.Type)
-			c.Send(MessageToClient{
+			c.Send(commons.MessageToClient{
 				Status:  "ERROR",
 				Content: "I did not recognize the message content type you provided",
 			})
