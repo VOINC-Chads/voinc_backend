@@ -35,7 +35,8 @@ jobs:
           export PATH=$PATH:/usr/local/go/bin
           go get
           go build .
-          sudo nohup ./voinc-backend &
+          sudo touch nohupout.out
+          sudo nohup ./voinc-backend > nohupout.out &
 
     env:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
