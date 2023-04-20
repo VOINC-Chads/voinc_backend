@@ -23,6 +23,9 @@ jobs:
         target: "/home/ubuntu/repo"
 
     - name: SSH to EC2 and build
+      env:
+        TF_VAR_AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        TF_VAR_AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       uses: appleboy/ssh-action@master
       with:
         host: 18.219.196.154
@@ -33,10 +36,13 @@ jobs:
           echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
           source ~/.bashrc
           export PATH=$PATH:/usr/local/go/bin
+          export TF_VAR_AWS_ACCESS_KEY=$TF_VAR_AWS_ACCESS_KEY
+          export TF_VAR_AWS_SECRET_KEY=$TF_VAR_AWS_SECRET_KEY
           go get
           go build .
           sudo touch nohupout.out
-          sudo sh -c 'nohup ./voinc-backend > nohupout.out 2>&1 &'
+          chmod 777 nohupout.out
+          nohup ./voinc-backend > nohupout.out 2>&1 &
 
     env:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

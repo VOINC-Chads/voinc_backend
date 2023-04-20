@@ -2,6 +2,20 @@ locals {
   infra = jsondecode(file("infra.json"))
 }
 
+variable "AWS_SECRET_KEY"{
+  type = string
+}
+
+variable "AWS_ACCESS_KEY"{
+  type = string
+}
+
+provider "aws" {
+  region     = "us-east-2"
+  secret_key = var.AWS_SECRET_KEY
+  access_key = var.AWS_ACCESS_KEY
+}
+
 resource "aws_vpc" "vpcs" {
   #count = length(local.infra)
 
