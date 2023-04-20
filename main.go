@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"net/http"
 	"sync"
 	"voinc-backend/stringgen"
@@ -41,7 +43,7 @@ func serveWs(session *websocket.Session, w http.ResponseWriter, r *http.Request,
 		PublicInfo: clientPublicInfo,
 		Conn:       conn,
 		Session:    session,
-		ZMQClient: 	nil,
+		ZMQClient:  nil,
 	}
 
 	session.Register <- client
@@ -86,6 +88,10 @@ func main() {
 	// terraformInstance := terraform.GetInstance()
 
 	// terraformInstance.Apply()
+
+	// Reset infra.json
+	newJson, _ := json.Marshal([]int{})
+	ioutil.WriteFile("infra/infra.json", newJson, 0644)
 
 	setupRoutes()
 
